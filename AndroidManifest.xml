@@ -10,7 +10,9 @@
 
     <application
         android:allowBackup="true"
-        android:label="Game Traductor"
+        android:icon="@drawable/ic_launcher_sidd"
+        android:label="SiddTradu17"
+        android:roundIcon="@drawable/ic_launcher_sidd"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
 
