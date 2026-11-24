@@ -47,7 +47,7 @@ class TranslatorHelper(
         }
 
         // 2. Si no estaba en caché, traduce y guarda
-        val translateAction = {
+        val translateAction: () -> Unit = {
             translator.translate(clean)
                 .addOnSuccessListener { spanish ->
                     val finalText = spanish.trim()
@@ -57,6 +57,7 @@ class TranslatorHelper(
                 .addOnFailureListener { e ->
                     onError(e)
                 }
+            Unit
         }
 
         if (modelReady) {
