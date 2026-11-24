@@ -9,12 +9,14 @@ import android.provider.Settings
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
+import com.cuentalmt17.gametraduccin.capture.ScreenCaptureHelper
 import com.cuentalmt17.gametraduccin.overlay.FloatingBubbleService
 
 class MainActivity : Activity() {
 
     companion object {
         private const val REQUEST_OVERLAY_PERMISSION = 1001
+        private const val REQUEST_MEDIA_PROJECTION = 1002
     }
 
     private lateinit var statusText: TextView
@@ -23,12 +25,12 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
 
         val btnStart = Button(this).apply {
-            text = "Activar botón flotante"
-            setOnClickListener { checkOverlayAndStart() }
+            text = "Activar traductor flotante"
+            setOnClickListener { checkOverlayAndCapturePermissions() }
         }
 
         val btnStop = Button(this).apply {
-            text = "Detener botón flotante"
+            text = "Detener traductor"
             setOnClickListener {
                 stopService(Intent(this@MainActivity, FloatingBubbleService::class.java))
                 statusText.text = "Estado: detenido"
@@ -51,37 +53,59 @@ class MainActivity : Activity() {
         setContentView(layout)
     }
 
-    private fun checkOverlayAndStart() {
+    private fun checkOverlayAndCapturePermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
             statusText.text = "Otorgá el permiso para mostrar sobre otras apps..."
             val intent = Intent(
                 Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                 Uri.parse("package:$packageName")
             )
+            @Suppress("DEPRECATION")
             startActivityForResult(intent, REQUEST_OVERLAY_PERMISSION)
         } else {
-            startBubbleService()
+            requestScreenCapture()
         }
     }
 
-    private fun startBubbleService() {
-        val intent = Intent(this, FloatingBubbleService::class.java)
+    private fun requestScreenCapture() {
+        statusText.text = "Aceptá el permiso de captura de pantalla..."
+        @Suppress("DEPRECATION")
+        startActivityForResult(
+            ScreenCaptureHelper.createPermissionIntent(this),
+            REQUEST_MEDIA_PROJECTION
+        )
+    }
+
+    private fun startBubbleService(resultCode: Int, data: Intent) {
+        val intent = Intent(this, FloatingBubbleService::class.java).apply {
+            putExtra(FloatingBubbleService.EXTRA_RESULT_CODE, resultCode)
+            putExtra(FloatingBubbleService.EXTRA_DATA_INTENT, data)
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             startForegroundService(intent)
         } else {
             startService(intent)
         }
-        statusText.text = "Estado: burbuja activa en pantalla"
+        statusText.text = "Estado: activo. Podés abrir tu juego."
     }
 
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == REQUEST_OVERLAY_PERMISSION) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && Settings.canDrawOverlays(this)) {
-                startBubbleService()
-            } else {
-                statusText.text = "Permiso denegado: no se puede mostrar encima del juego"
+        when (requestCode) {
+            REQUEST_OVERLAY_PERMISSION -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && Settings.canDrawOverlays(this)) {
+                    requestScreenCapture()
+                } else {
+                    statusText.text = "Permiso de superposición denegado"
+                }
+            }
+            REQUEST_MEDIA_PROJECTION -> {
+                if (ScreenCaptureHelper.isValidResult(resultCode) && data != null) {
+                    startBubbleService(resultCode, data)
+                } else {
+                    statusText.text = "Permiso de captura denegado"
+                }
             }
         }
     }
