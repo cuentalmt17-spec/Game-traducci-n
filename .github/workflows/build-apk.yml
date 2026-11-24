@@ -18,11 +18,18 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
+          cache: "gradle"
 
-      - name: Setup Android SDK & Gradle
+      - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          api-level: 35
+          build-tools: "35.0.0"
 
-      - name: Assemble project workspace
+      - name: Setup Gradle CLI
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Assemble project workspace & build APK
         run: |
           mkdir -p /tmp/siddtradu17/app/src/main/java/com/cuentalmt17/gametraduccin/overlay
           mkdir -p /tmp/siddtradu17/app/src/main/java/com/cuentalmt17/gametraduccin/capture
@@ -99,8 +106,7 @@ jobs:
             cp "TranslatorHelper.kt" /tmp/siddtradu17/app/src/main/java/com/cuentalmt17/gametraduccin/translate/TranslatorHelper.kt
           fi
 
-          gradle --version
-          cd /tmp/siddtradu17 && gradle assembleDebug --no-daemon
+          cd /tmp/siddtradu17 && gradle assembleDebug --no-daemon --stacktrace
           cp /tmp/siddtradu17/app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/SiddTradu17-debug.apk"
 
       - name: Upload APK artifact
