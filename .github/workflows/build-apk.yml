@@ -20,9 +20,6 @@ jobs:
           java-version: "17"
           cache: "gradle"
 
-      - name: Setup Gradle CLI
-        uses: gradle/actions/setup-gradle@v4
-
       - name: Prepare Android SDK licenses & packages
         run: |
           export ANDROID_HOME=/usr/local/lib/android/sdk
@@ -112,7 +109,9 @@ jobs:
             cp "TranslatorHelper.kt" /tmp/siddtradu17/app/src/main/java/com/cuentalmt17/gametraduccin/translate/TranslatorHelper.kt
           fi
 
-          cd /tmp/siddtradu17 && gradle assembleDebug --no-daemon --stacktrace
+          cd /tmp/siddtradu17
+          gradle wrapper --gradle-version 8.9 --distribution-type bin
+          ./gradlew assembleDebug --no-daemon
           cp /tmp/siddtradu17/app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/SiddTradu17-debug.apk"
 
       - name: Upload APK artifact
